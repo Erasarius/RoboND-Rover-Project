@@ -98,6 +98,7 @@ def perception_step(rover):
     dst_size = scale / 2 
     bottom_offset = 6
 
+    ROCK_IDX = 1
     NAV_IDX = 2
 
     # 1) Define source and destination points for perspective transform
@@ -114,12 +115,14 @@ def perception_step(rover):
 
     # 3) Apply color threshold to identify navigable terrain/obstacles/rock samples
     navigable = color_thresh(warped, rgb_thresh=(160, 160, 160))
+    rocks = color_range(warped, (140, 115, 0), (255, 255, 90))
 
 
     # 4) Update Rover.vision_rover.img (this will be displayed on left side of screen)
         # Example: Rover.vision_rover.img[:,:,0] = obstacle color-thresholded binary rover.img 
         #          Rover.vision_rover.img[:,:,1] = rock_sample color-thresholded binary rover.img
         #          Rover.vision_rover.img[:,:,2] = navigable terrain color-thresholded binary rover.img
+    rover.vision_image[:,:,ROCK_IDX] = rocks
     rover.vision_image[:,:,NAV_IDX] = navigable
 
     rover.vision_image *= 255
@@ -129,16 +132,17 @@ def perception_step(rover):
     obst_x_rover, obst_y_rover = rover_coords(rover.vision_image[:,:, 0])
     obst_x_world, obst_y_world = pix_to_world(obst_x_rover, obst_y_rover, rover.pos[0], rover.pos[1], rover.yaw, rover.worldmap.shape[0], scale)
 
-    rock_x_rover, rock_y_rover = rover_coords(rover.vision_image[:,:, 1])
+    rock_x_rover, rock_y_rover = rover_coords(rover.vision_image[:,:, ROCK_IDX])
     rock_x_world, rock_y_world = pix_to_world(rock_x_rover, rock_y_rover, rover.pos[0], rover.pos[1], rover.yaw, rover.worldmap.shape[0], scale)
 
-    nav_x_rover, nav_y_rover = rover_coords(rover.vision_image[:,:, 2])
+    nav_x_rover, nav_y_rover = rover_coords(rover.vision_image[:,:, NAV_IDX])
     nav_x_world, nav_y_world = pix_to_world(nav_x_rover, nav_y_rover, rover.pos[0], rover.pos[1], rover.yaw, rover.worldmap.shape[0], scale)
 
     # 7) Update worldmap (to be displayed on right side of screen)
         # Example: data.worldmap[obstacle_y_world, obstacle_x_world, 0] += 1
         #          data.worldmap[rock_y_world, rock_x_world, 1] += 1
         #          data.worldmap[navigable_y_world, navigable_x_world, 2] += 1
+    rover.worldmap[rock_y_world, rock_x_world, ROCK_IDX] = 1.
     rover.worldmap[nav_y_world, nav_x_world, NAV_IDX] = 1.
 
     #for i in range(2):

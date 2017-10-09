@@ -5,10 +5,10 @@ import matplotlib.image as mpimg
 import numpy as np
 
 def rock_threshold():
-    image_name = '../calibration_images/example_rock1.jpg'
+    image_name = '../calibration_images/example_rock2.jpg'
     image = mpimg.imread(image_name)
     #colorsel = perception.color_thresh(image, rgb_thresh=(180, 180, 0))
-    colorsel = perception.color_range(image, (140, 115, 0), (255, 255, 50))
+    colorsel = perception.color_range(image, (140, 115, 0), (255, 255, 90))
 
     #print(colorsel)
 
@@ -50,4 +50,5 @@ def test_perception():
 
 
 if __name__ == "__main__":
-    test_perception()
+    #test_perception()
+    rock_threshold()
