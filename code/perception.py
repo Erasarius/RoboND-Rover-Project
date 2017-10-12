@@ -97,7 +97,7 @@ def perception_step(rover):
     scale = 10
     dst_size = scale / 2 
     bottom_offset = 6
-
+    OBST_IDX = 0
     ROCK_IDX = 1
     NAV_IDX = 2
 
@@ -114,16 +114,20 @@ def perception_step(rover):
     warped = perspect_transform(rover.img, source, destination)
 
     # 3) Apply color threshold to identify navigable terrain/obstacles/rock samples
-    navigable = color_thresh(warped, rgb_thresh=(160, 160, 160))
+    #navigable = color_thresh(warped, rgb_thresh=(160, 160, 160))
+    navigable = color_thresh(warped, rgb_thresh=(190, 170, 160))
     rocks = color_range(warped, (140, 115, 0), (255, 255, 90))
+    obstacles = color_range(warped, (1, 1, 1), (189, 169, 159))
 
 
     # 4) Update Rover.vision_rover.img (this will be displayed on left side of screen)
         # Example: Rover.vision_rover.img[:,:,0] = obstacle color-thresholded binary rover.img 
         #          Rover.vision_rover.img[:,:,1] = rock_sample color-thresholded binary rover.img
         #          Rover.vision_rover.img[:,:,2] = navigable terrain color-thresholded binary rover.img
+    rover.vision_image = np.zeros((160, 320, 3), dtype=np.float) 
     rover.vision_image[:,:,ROCK_IDX] = rocks
     rover.vision_image[:,:,NAV_IDX] = navigable
+    rover.vision_image[:,:,OBST_IDX] = obstacles
 
     rover.vision_image *= 255
 
@@ -134,7 +138,7 @@ def perception_step(rover):
 
     rock_x_rover, rock_y_rover = rover_coords(rover.vision_image[:,:, ROCK_IDX])
     rock_x_world, rock_y_world = pix_to_world(rock_x_rover, rock_y_rover, rover.pos[0], rover.pos[1], rover.yaw, rover.worldmap.shape[0], scale)
-
+    
     nav_x_rover, nav_y_rover = rover_coords(rover.vision_image[:,:, NAV_IDX])
     nav_x_world, nav_y_world = pix_to_world(nav_x_rover, nav_y_rover, rover.pos[0], rover.pos[1], rover.yaw, rover.worldmap.shape[0], scale)
 
@@ -142,13 +146,13 @@ def perception_step(rover):
         # Example: data.worldmap[obstacle_y_world, obstacle_x_world, 0] += 1
         #          data.worldmap[rock_y_world, rock_x_world, 1] += 1
         #          data.worldmap[navigable_y_world, navigable_x_world, 2] += 1
-    rover.worldmap[rock_y_world, rock_x_world, ROCK_IDX] = 1.
-    rover.worldmap[nav_y_world, nav_x_world, NAV_IDX] = 1.
 
-    #for i in range(2):
-    #    xpix, ypix = rover_coords(rover.vision_image[:,:, i])
-    #    x_world, y_world = pix_to_world(xpix, ypix, rover.pos[0], rover.pos[1], rover.yaw, rover.worldmap.shape[0], scale)
-    #    rover.worldmap[x_world, y_world, i] += 1   
+    # only update world map if our roll and pitch are within norms
+    if ((rover.pitch < 1. or rover.pitch > 359.) and (rover.roll < 1. or rover.roll > 359.0)):
+        rover.worldmap[rock_y_world, rock_x_world, ROCK_IDX] = 1.
+        rover.worldmap[nav_y_world, nav_x_world, NAV_IDX] = 1.
+        rover.worldmap[obst_y_world, obst_x_world, OBST_IDX] = 1.
+
 
     # 8) Convert rover-centric pixel positions to polar coordinates
     # Update Rover pixel distances and angles
