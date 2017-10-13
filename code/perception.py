@@ -90,6 +90,7 @@ def perspect_transform(img, src, dst):
 
 
 # Apply the above functions in succession and update the Rover state accordingly
+# Note that code changes are based on Udacity exercise solutions.
 def perception_step(rover):
     # Perform perception steps to update Rover()
     # TODO: 
